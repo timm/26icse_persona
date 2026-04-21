@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Claude Code Insights</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f8fafc; color: #334155; line-height: 1.65; padding: 48px 24px; }
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 { font-size: 32px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+    h2 { font-size: 20px; font-weight: 600; color: #0f172a; margin-top: 48px; margin-bottom: 16px; }
+    .subtitle { color: #64748b; font-size: 15px; margin-bottom: 32px; }
+    .nav-toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0 32px 0; padding: 16px; background: white; border-radius: 8px; border: 1px solid #e2e8f0; }
+    .nav-toc a { font-size: 12px; color: #64748b; text-decoration: none; padding: 6px 12px; border-radius: 6px; background: #f1f5f9; transition: all 0.15s; }
+    .nav-toc a:hover { background: #e2e8f0; color: #334155; }
+    .stats-row { display: flex; gap: 24px; margin-bottom: 40px; padding: 20px 0; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; }
+    .stat { text-align: center; }
+    .stat-value { font-size: 24px; font-weight: 700; color: #0f172a; }
+    .stat-label { font-size: 11px; color: #64748b; text-transform: uppercase; }
+    .at-a-glance { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 1px solid #f59e0b; border-radius: 12px; padding: 20px 24px; margin-bottom: 32px; }
+    .glance-title { font-size: 16px; font-weight: 700; color: #92400e; margin-bottom: 16px; }
+    .glance-sections { display: flex; flex-direction: column; gap: 12px; }
+    .glance-section { font-size: 14px; color: #78350f; line-height: 1.6; }
+    .glance-section strong { color: #92400e; }
+    .see-more { color: #b45309; text-decoration: none; font-size: 13px; white-space: nowrap; }
+    .see-more:hover { text-decoration: underline; }
+    .project-areas { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+    .project-area { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; }
+    .area-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .area-name { font-weight: 600; font-size: 15px; color: #0f172a; }
+    .area-count { font-size: 12px; color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; }
+    .area-desc { font-size: 14px; color: #475569; line-height: 1.5; }
+    .narrative { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
+    .narrative p { margin-bottom: 12px; font-size: 14px; color: #475569; line-height: 1.7; }
+    .key-insight { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; margin-top: 12px; font-size: 14px; color: #166534; }
+    .section-intro { font-size: 14px; color: #64748b; margin-bottom: 16px; }
+    .big-wins { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+    .big-win { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; }
+    .big-win-title { font-weight: 600; font-size: 15px; color: #166534; margin-bottom: 8px; }
+    .big-win-desc { font-size: 14px; color: #15803d; line-height: 1.5; }
+    .friction-categories { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+    .friction-category { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 16px; }
+    .friction-title { font-weight: 600; font-size: 15px; color: #991b1b; margin-bottom: 6px; }
+    .friction-desc { font-size: 13px; color: #7f1d1d; margin-bottom: 10px; }
+    .friction-examples { margin: 0 0 0 20px; font-size: 13px; color: #334155; }
+    .friction-examples li { margin-bottom: 4px; }
+    .claude-md-section { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+    .claude-md-section h3 { font-size: 14px; font-weight: 600; color: #1e40af; margin: 0 0 12px 0; }
+    .claude-md-actions { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #dbeafe; }
+    .copy-all-btn { background: #2563eb; color: white; border: none; border-radius: 4px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+    .copy-all-btn:hover { background: #1d4ed8; }
+    .copy-all-btn.copied { background: #16a34a; }
+    .claude-md-item { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; padding: 10px 0; border-bottom: 1px solid #dbeafe; }
+    .claude-md-item:last-child { border-bottom: none; }
+    .cmd-checkbox { margin-top: 2px; }
+    .cmd-code { background: white; padding: 8px 12px; border-radius: 4px; font-size: 12px; color: #1e40af; border: 1px solid #bfdbfe; font-family: monospace; display: block; white-space: pre-wrap; word-break: break-word; flex: 1; }
+    .cmd-why { font-size: 12px; color: #64748b; width: 100%; padding-left: 24px; margin-top: 4px; }
+    .features-section, .patterns-section { display: flex; flex-direction: column; gap: 12px; margin: 16px 0; }
+    .feature-card { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 16px; }
+    .pattern-card { background: #f0f9ff; border: 1px solid #7dd3fc; border-radius: 8px; padding: 16px; }
+    .feature-title, .pattern-title { font-weight: 600; font-size: 15px; color: #0f172a; margin-bottom: 6px; }
+    .feature-oneliner { font-size: 14px; color: #475569; margin-bottom: 8px; }
+    .pattern-summary { font-size: 14px; color: #475569; margin-bottom: 8px; }
+    .feature-why, .pattern-detail { font-size: 13px; color: #334155; line-height: 1.5; }
+    .feature-examples { margin-top: 12px; }
+    .feature-example { padding: 8px 0; border-top: 1px solid #d1fae5; }
+    .feature-example:first-child { border-top: none; }
+    .example-desc { font-size: 13px; color: #334155; margin-bottom: 6px; }
+    .example-code-row { display: flex; align-items: flex-start; gap: 8px; }
+    .example-code { flex: 1; background: #f1f5f9; padding: 8px 12px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #334155; overflow-x: auto; white-space: pre-wrap; }
+    .copyable-prompt-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
+    .copyable-prompt-row { display: flex; align-items: flex-start; gap: 8px; }
+    .copyable-prompt { flex: 1; background: #f8fafc; padding: 10px 12px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #334155; border: 1px solid #e2e8f0; white-space: pre-wrap; line-height: 1.5; }
+    .feature-code { background: #f8fafc; padding: 12px; border-radius: 6px; margin-top: 12px; border: 1px solid #e2e8f0; display: flex; align-items: flex-start; gap: 8px; }
+    .feature-code code { flex: 1; font-family: monospace; font-size: 12px; color: #334155; white-space: pre-wrap; }
+    .pattern-prompt { background: #f8fafc; padding: 12px; border-radius: 6px; margin-top: 12px; border: 1px solid #e2e8f0; }
+    .pattern-prompt code { font-family: monospace; font-size: 12px; color: #334155; display: block; white-space: pre-wrap; margin-bottom: 8px; }
+    .prompt-label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #64748b; margin-bottom: 6px; }
+    .copy-btn { background: #e2e8f0; border: none; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; color: #475569; flex-shrink: 0; }
+    .copy-btn:hover { background: #cbd5e1; }
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 24px 0; }
+    .chart-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; }
+    .chart-title { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 12px; }
+    .bar-row { display: flex; align-items: center; margin-bottom: 6px; }
+    .bar-label { width: 100px; font-size: 11px; color: #475569; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bar-track { flex: 1; height: 6px; background: #f1f5f9; border-radius: 3px; margin: 0 8px; }
+    .bar-fill { height: 100%; border-radius: 3px; }
+    .bar-value { width: 28px; font-size: 11px; font-weight: 500; color: #64748b; text-align: right; }
+    .empty { color: #94a3b8; font-size: 13px; }
+    .horizon-section { display: flex; flex-direction: column; gap: 16px; }
+    .horizon-card { background: linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%); border: 1px solid #c4b5fd; border-radius: 8px; padding: 16px; }
+    .horizon-title { font-weight: 600; font-size: 15px; color: #5b21b6; margin-bottom: 8px; }
+    .horizon-possible { font-size: 14px; color: #334155; margin-bottom: 10px; line-height: 1.5; }
+    .horizon-tip { font-size: 13px; color: #6b21a8; background: rgba(255,255,255,0.6); padding: 8px 12px; border-radius: 4px; }
+    .feedback-header { margin-top: 48px; color: #64748b; font-size: 16px; }
+    .feedback-intro { font-size: 13px; color: #94a3b8; margin-bottom: 16px; }
+    .feedback-section { margin-top: 16px; }
+    .feedback-section h3 { font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 12px; }
+    .feedback-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .feedback-card.team-card { background: #eff6ff; border-color: #bfdbfe; }
+    .feedback-card.model-card { background: #faf5ff; border-color: #e9d5ff; }
+    .feedback-title { font-weight: 600; font-size: 14px; color: #0f172a; margin-bottom: 6px; }
+    .feedback-detail { font-size: 13px; color: #475569; line-height: 1.5; }
+    .feedback-evidence { font-size: 12px; color: #64748b; margin-top: 8px; }
+    .fun-ending { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 1px solid #fbbf24; border-radius: 12px; padding: 24px; margin-top: 40px; text-align: center; }
+    .fun-headline { font-size: 18px; font-weight: 600; color: #78350f; margin-bottom: 8px; }
+    .fun-detail { font-size: 14px; color: #92400e; }
+    .collapsible-section { margin-top: 16px; }
+    .collapsible-header { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 12px 0; border-bottom: 1px solid #e2e8f0; }
+    .collapsible-header h3 { margin: 0; font-size: 14px; font-weight: 600; color: #475569; }
+    .collapsible-arrow { font-size: 12px; color: #94a3b8; transition: transform 0.2s; }
+    .collapsible-content { display: none; padding-top: 16px; }
+    .collapsible-content.open { display: block; }
+    .collapsible-header.open .collapsible-arrow { transform: rotate(90deg); }
+    @media (max-width: 640px) { .charts-row { grid-template-columns: 1fr; } .stats-row { justify-content: center; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Claude Code Insights</h1>
+    <p class="subtitle">369 messages across 5 sessions (10 total) | 2026-04-17 to 2026-04-21</p>
+
+    
+    <div class="at-a-glance">
+      <div class="glance-title">At a Glance</div>
+      <div class="glance-sections">
+        <div class="glance-section"><strong>What's working:</strong> You work iteratively and skeptically — pushing through dozens of small design tweaks to converge on a cohesive dark/amber academic site, and critically reviewing the ezr multi-language port instead of accepting suspiciously strong Lua benchmarks. That blend of fast iteration plus auditing Claude&apos;s output as a draft (catching pick semantics errors, missed doc updates) is exactly how to get good results from a capable assistant. <a href="#section-wins" class="see-more">Impressive Things You Did →</a></div>
+        <div class="glance-section"><strong>What's hindering you:</strong> On Claude&apos;s side, there were semantic misreads on domain-specific logic (pick applied to NUM, #keys vs Bernoulli over counts) and silent correctness bugs in the Lua port that &apos;passing tests&apos; didn&apos;t catch. On your side, the friction was mostly missing guardrails upfront: no spec or invariants shared before refactors, no differential check against a reference implementation during ports, and broad CSS/asset choices (Academicons, strong-tag override) that weren&apos;t validated before rippling through the design. <a href="#section-friction" class="see-more">Where Things Go Wrong →</a></div>
+        <div class="glance-section"><strong>Quick wins to try:</strong> Try defining a Custom Skill for your refactor workflow that bundles your invariants (e.g., &apos;pick semantics,&apos; &apos;keep book.html synced&apos;) so Claude re-reads them every run. A Task Agent is also a strong fit for your multi-language ports — spawn one per language with a shared reference dataset and have them cross-check numerical outputs, not just tests passing. <a href="#section-features" class="see-more">Features to Try →</a></div>
+        <div class="glance-section"><strong>Ambitious workflows:</strong> As models get stronger, your multi-language ports become a parallel verification problem: a coordinator agent spawns per-language subagents that implement, benchmark, and cross-validate outputs, flagging statistical anomalies before you ever see a &apos;too good to be true&apos; result. Similarly, your UI iteration loop could collapse into a single directive — a vision-capable agent screenshots changes, detects missing glyphs or broken link colors, and self-corrects — turning 30 manual tweaks into one high-level brief. <a href="#section-horizon" class="see-more">On the Horizon →</a></div>
+      </div>
+    </div>
+    
+
+    <nav class="nav-toc">
+      <a href="#section-work">What You Work On</a>
+      <a href="#section-usage">How You Use CC</a>
+      <a href="#section-wins">Impressive Things</a>
+      <a href="#section-friction">Where Things Go Wrong</a>
+      <a href="#section-features">Features to Try</a>
+      <a href="#section-patterns">New Usage Patterns</a>
+      <a href="#section-horizon">On the Horizon</a>
+      <a href="#section-feedback">Team Feedback</a>
+    </nav>
+
+    <div class="stats-row">
+      <div class="stat"><div class="stat-value">369</div><div class="stat-label">Messages</div></div>
+      <div class="stat"><div class="stat-value">+11,226/-1,034</div><div class="stat-label">Lines</div></div>
+      <div class="stat"><div class="stat-value">29</div><div class="stat-label">Files</div></div>
+      <div class="stat"><div class="stat-value">4</div><div class="stat-label">Days</div></div>
+      <div class="stat"><div class="stat-value">92.3</div><div class="stat-label">Msgs/Day</div></div>
+    </div>
+
+    
+    <h2 id="section-work">What You Work On</h2>
+    <div class="project-areas">
+      
+        <div class="project-area">
+          <div class="area-header">
+            <span class="area-name">Academic Website Design</span>
+            <span class="area-count">~1 sessions</span>
+          </div>
+          <div class="area-desc">Extensive iterative UI work transforming index.html into a dark/amber-themed academic page, with companion blog and lab pages sharing a common stylesheet. Claude executed dozens of small design tweaks via Edit, navigating issues like Academicons webfont rendering failures (swapped to Simple Icons SVGs) and CSS override conflicts on link colors.</div>
+        </div>
+      
+        <div class="project-area">
+          <div class="area-header">
+            <span class="area-name">ezr Multi-Language Port</span>
+            <span class="area-count">~2 sessions</span>
+          </div>
+          <div class="area-desc">User ported the ezr project across Lisp, Julia, Python, and Lua with accompanying docs and benchmarks. Claude produced working implementations but the Lua port surfaced bugs (gmatch anchoring, operator precedence) and suspiciously strong benchmark results suggested unresolved correctness issues.</div>
+        </div>
+      
+        <div class="project-area">
+          <div class="area-header">
+            <span class="area-name">Lua Refactoring &amp; Style Audit</span>
+            <span class="area-count">~1 sessions</span>
+          </div>
+          <div class="area-desc">Long refactoring pass on ezr.lua including a line-width reduction from 86 to 79 columns while keeping tests passing. Claude needed correction twice on pick semantics (misapplying to NUM, then using #keys instead of Bernoulli over counts) and initially skipped a book.html doc update.</div>
+        </div>
+      
+        <div class="project-area">
+          <div class="area-header">
+            <span class="area-name">Lecture Slide Preparation</span>
+            <span class="area-count">~1 sessions</span>
+          </div>
+          <div class="area-desc">User requested SOTA paper recommendations for a lecture and wanted new slides added to an existing pptx deck. Claude used WebFetch/WebSearch to gather recommendations and successfully inserted 5 new slides to the requested path.</div>
+        </div>
+      
+        <div class="project-area">
+          <div class="area-header">
+            <span class="area-name">NBC Classifier Demo Brainstorm</span>
+            <span class="area-count">~1 sessions</span>
+          </div>
+          <div class="area-desc">Collaborative design session for a minimal Naive Bayes classifier demo. Claude guided the user through technology choices (awk language, Adult/Census dataset) and produced an architecture sketch with code before the user exited.</div>
+        </div>
+      
+    </div>
+    
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">What You Wanted</div>
+        <div class="bar-row">
+        <div class="bar-label">Ui Design Iteration</div>
+        <div class="bar-track"><div class="bar-fill" style="width:100%;background:#2563eb"></div></div>
+        <div class="bar-value">15</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Code Refactoring</div>
+        <div class="bar-track"><div class="bar-fill" style="width:46.666666666666664%;background:#2563eb"></div></div>
+        <div class="bar-value">7</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Fix Visual Bug</div>
+        <div class="bar-track"><div class="bar-fill" style="width:20%;background:#2563eb"></div></div>
+        <div class="bar-value">3</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Create New Page</div>
+        <div class="bar-track"><div class="bar-fill" style="width:13.333333333333334%;background:#2563eb"></div></div>
+        <div class="bar-value">2</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Add Content Features</div>
+        <div class="bar-track"><div class="bar-fill" style="width:13.333333333333334%;background:#2563eb"></div></div>
+        <div class="bar-value">2</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Document Analysis</div>
+        <div class="bar-track"><div class="bar-fill" style="width:13.333333333333334%;background:#2563eb"></div></div>
+        <div class="bar-value">2</div>
+      </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Top Tools Used</div>
+        <div class="bar-row">
+        <div class="bar-label">Edit</div>
+        <div class="bar-track"><div class="bar-fill" style="width:100%;background:#0891b2"></div></div>
+        <div class="bar-value">238</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Bash</div>
+        <div class="bar-track"><div class="bar-fill" style="width:93.27731092436974%;background:#0891b2"></div></div>
+        <div class="bar-value">222</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Read</div>
+        <div class="bar-track"><div class="bar-fill" style="width:24.369747899159663%;background:#0891b2"></div></div>
+        <div class="bar-value">58</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Write</div>
+        <div class="bar-track"><div class="bar-fill" style="width:15.966386554621847%;background:#0891b2"></div></div>
+        <div class="bar-value">38</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">WebFetch</div>
+        <div class="bar-track"><div class="bar-fill" style="width:4.201680672268908%;background:#0891b2"></div></div>
+        <div class="bar-value">10</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">WebSearch</div>
+        <div class="bar-track"><div class="bar-fill" style="width:2.941176470588235%;background:#0891b2"></div></div>
+        <div class="bar-value">7</div>
+      </div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">Languages</div>
+        <div class="bar-row">
+        <div class="bar-label">HTML</div>
+        <div class="bar-track"><div class="bar-fill" style="width:100%;background:#10b981"></div></div>
+        <div class="bar-value">80</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Markdown</div>
+        <div class="bar-track"><div class="bar-fill" style="width:27.500000000000004%;background:#10b981"></div></div>
+        <div class="bar-value">22</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">CSS</div>
+        <div class="bar-track"><div class="bar-fill" style="width:7.5%;background:#10b981"></div></div>
+        <div class="bar-value">6</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Python</div>
+        <div class="bar-track"><div class="bar-fill" style="width:5%;background:#10b981"></div></div>
+        <div class="bar-value">4</div>
+      </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Session Types</div>
+        <div class="bar-row">
+        <div class="bar-label">Iterative Refinement</div>
+        <div class="bar-track"><div class="bar-fill" style="width:100%;background:#8b5cf6"></div></div>
+        <div class="bar-value">3</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Multi Task</div>
+        <div class="bar-track"><div class="bar-fill" style="width:66.66666666666666%;background:#8b5cf6"></div></div>
+        <div class="bar-value">2</div>
+      </div>
+      </div>
+    </div>
+
+    
+    <h2 id="section-usage">How You Use Claude Code</h2>
+    <div class="narrative">
+      <p>You work in tight, iterative loops—especially on UI and design tasks. The data shows <strong>238 Edits against only 38 Writes</strong>, meaning you rarely ask Claude to generate whole files from scratch; instead you let it produce something, then drive it through dozens of small tweaks. The index.html redesign session is emblematic: you pushed Claude through a long chain of small aesthetic adjustments (dark/amber theming, font swaps, link color fixes) rather than specifying the full design upfront. When Academicons glyphs failed to render, you pivoted to Simple Icons mid-stream—you discover requirements by watching Claude&apos;s output, not by pre-specifying them.</p>
+<p>You <strong>let Claude run but stay vigilant for correctness</strong>, particularly on technical work. In the ezr.lua refactor, you corrected Claude twice on pick semantics (once for misapplying to NUM, once for using #keys instead of Bernoulli over counts) and caught a missed book.html update. Notably, in the multi-language port session, you ended with suspicion that the Lua results were &apos;too good to be true&apos;—you trust-but-verify, and you&apos;re willing to flag unresolved correctness concerns rather than accept a clean-looking result. Your friction profile (4 buggy_code instances, only 2 misunderstood_request) suggests Claude generally grasps your intent; the issues are in execution details you catch on review.</p>
+<p>Your sessions are <strong>long and exploratory</strong> (86 hours across 5 sessions, 369 messages), and you&apos;re comfortable with brainstorming-style collaboration—the NBC classifier session shows you letting Claude guide language/dataset/output choices before committing. You occasionally open a session and immediately exit, suggesting you treat Claude Code as an always-available scratchpad rather than a tool requiring ceremony. The heavy HTML/Markdown footprint plus the pptx slide insertion task paint a picture of an academic juggling teaching materials, personal site polish, and research code refactoring in parallel.</p>
+      <div class="key-insight"><strong>Key pattern:</strong> You iterate in small increments, letting Claude execute while you actively review for correctness and pivot requirements based on what you see.</div>
+    </div>
+    
+
+    <!-- Response Time Distribution -->
+    <div class="chart-card" style="margin: 24px 0;">
+      <div class="chart-title">User Response Time Distribution</div>
+      <div class="bar-row">
+        <div class="bar-label">2-10s</div>
+        <div class="bar-track"><div class="bar-fill" style="width:17.24137931034483%;background:#6366f1"></div></div>
+        <div class="bar-value">15</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">10-30s</div>
+        <div class="bar-track"><div class="bar-fill" style="width:44.827586206896555%;background:#6366f1"></div></div>
+        <div class="bar-value">39</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">30s-1m</div>
+        <div class="bar-track"><div class="bar-fill" style="width:83.9080459770115%;background:#6366f1"></div></div>
+        <div class="bar-value">73</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">1-2m</div>
+        <div class="bar-track"><div class="bar-fill" style="width:100%;background:#6366f1"></div></div>
+        <div class="bar-value">87</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">2-5m</div>
+        <div class="bar-track"><div class="bar-fill" style="width:100%;background:#6366f1"></div></div>
+        <div class="bar-value">87</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">5-15m</div>
+        <div class="bar-track"><div class="bar-fill" style="width:43.67816091954023%;background:#6366f1"></div></div>
+        <div class="bar-value">38</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">>15m</div>
+        <div class="bar-track"><div class="bar-fill" style="width:10.344827586206897%;background:#6366f1"></div></div>
+        <div class="bar-value">9</div>
+      </div>
+      <div style="font-size: 12px; color: #64748b; margin-top: 8px;">
+        Median: 88.9s &bull; Average: 171.7s
+      </div>
+    </div>
+
+    <!-- Multi-clauding Section (matching Python reference) -->
+    <div class="chart-card" style="margin: 24px 0;">
+      <div class="chart-title">Multi-Clauding (Parallel Sessions)</div>
+      
+        <p style="font-size: 14px; color: #64748b; padding: 8px 0;">
+          No parallel session usage detected. You typically work with one Claude Code session at a time.
+        </p>
+      
+    </div>
+
+    <!-- Time of Day & Tool Errors -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title" style="display: flex; align-items: center; gap: 12px;">
+          User Messages by Time of Day
+          <select id="timezone-select" style="font-size: 12px; padding: 4px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
+            <option value="0">PT (UTC-8)</option>
+            <option value="3">ET (UTC-5)</option>
+            <option value="8">London (UTC)</option>
+            <option value="9">CET (UTC+1)</option>
+            <option value="17">Tokyo (UTC+9)</option>
+            <option value="custom">Custom offset...</option>
+          </select>
+          <input type="number" id="custom-offset" placeholder="UTC offset" style="display: none; width: 80px; font-size: 12px; padding: 4px; border-radius: 4px; border: 1px solid #e2e8f0;">
+        </div>
+        <div id="hour-histogram">
+      <div class="bar-row">
+        <div class="bar-label">Morning (6-12)</div>
+        <div class="bar-track"><div class="bar-fill" style="width:60.95890410958904%;background:#8b5cf6"></div></div>
+        <div class="bar-value">89</div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-label">Afternoon (12-18)</div>
+        <div class="bar-track"><div class="bar-fill" style="width:100%;background:#8b5cf6"></div></div>
+        <div class="bar-value">146</div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-label">Evening (18-24)</div>
+        <div class="bar-track"><div class="bar-fill" style="width:52.73972602739726%;background:#8b5cf6"></div></div>
+        <div class="bar-value">77</div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-label">Night (0-6)</div>
+        <div class="bar-track"><div class="bar-fill" style="width:39.04109589041096%;background:#8b5cf6"></div></div>
+        <div class="bar-value">57</div>
+      </div></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Tool Errors Encountered</div>
+        <div class="bar-row">
+        <div class="bar-label">User Rejected</div>
+        <div class="bar-track"><div class="bar-fill" style="width:100%;background:#dc2626"></div></div>
+        <div class="bar-value">18</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Command Failed</div>
+        <div class="bar-track"><div class="bar-fill" style="width:38.88888888888889%;background:#dc2626"></div></div>
+        <div class="bar-value">7</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Other</div>
+        <div class="bar-track"><div class="bar-fill" style="width:33.33333333333333%;background:#dc2626"></div></div>
+        <div class="bar-value">6</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">File Changed</div>
+        <div class="bar-track"><div class="bar-fill" style="width:33.33333333333333%;background:#dc2626"></div></div>
+        <div class="bar-value">6</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Edit Failed</div>
+        <div class="bar-track"><div class="bar-fill" style="width:27.77777777777778%;background:#dc2626"></div></div>
+        <div class="bar-value">5</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">File Not Found</div>
+        <div class="bar-track"><div class="bar-fill" style="width:5.555555555555555%;background:#dc2626"></div></div>
+        <div class="bar-value">1</div>
+      </div>
+      </div>
+    </div>
+
+    
+    <h2 id="section-wins">Impressive Things You Did</h2>
+    <p class="section-intro">Over 5 sessions and 86 hours, you&apos;ve driven ambitious design iteration, multi-language ports, and lecture prep with Claude as a hands-on collaborator.</p>
+    <div class="big-wins">
+      
+        <div class="big-win">
+          <div class="big-win-title">Rapid UI Design Iteration</div>
+          <div class="big-win-desc">You pushed through dozens of small, focused design tweaks to transform index.html into a cohesive dark/amber academic site, then spun off companion blog and lab pages sharing a common stylesheet. Your willingness to iterate tightly on visuals (15 UI design iterations logged) let you converge on the aesthetic you wanted rather than settling for a first draft.</div>
+        </div>
+      
+        <div class="big-win">
+          <div class="big-win-title">Multi-Language Algorithm Porting</div>
+          <div class="big-win-desc">You orchestrated a cross-language port of ezr across Lisp, Julia, Python, and Lua with docs and benchmarks — a demanding coordination task. Importantly, you stayed skeptical of the Lua port&apos;s surprisingly strong results, showing exactly the kind of critical review that catches silent correctness bugs.</div>
+        </div>
+      
+        <div class="big-win">
+          <div class="big-win-title">Correcting Course During Refactors</div>
+          <div class="big-win-desc">During the ezr.lua style audit, you caught Claude misreading pick semantics twice and flagged a missed book.html update, steering the refactor back on track. Treating Claude&apos;s output as a draft to audit — not a final answer — is why the line-width migration landed cleanly with tests passing.</div>
+        </div>
+      
+    </div>
+    
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">What Helped Most (Claude's Capabilities)</div>
+        <div class="bar-row">
+        <div class="bar-label">Multi-file Changes</div>
+        <div class="bar-track"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+        <div class="bar-value">4</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Good Explanations</div>
+        <div class="bar-track"><div class="bar-fill" style="width:25%;background:#16a34a"></div></div>
+        <div class="bar-value">1</div>
+      </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Outcomes</div>
+        <div class="bar-row">
+        <div class="bar-label">Mostly Achieved</div>
+        <div class="bar-track"><div class="bar-fill" style="width:100%;background:#8b5cf6"></div></div>
+        <div class="bar-value">4</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Fully Achieved</div>
+        <div class="bar-track"><div class="bar-fill" style="width:25%;background:#8b5cf6"></div></div>
+        <div class="bar-value">1</div>
+      </div>
+      </div>
+    </div>
+
+    
+    <h2 id="section-friction">Where Things Go Wrong</h2>
+    <p class="section-intro">Your sessions show strong iteration velocity but recurring correctness gaps, particularly around domain semantics and cross-language ports where bugs slip through unnoticed.</p>
+    <div class="friction-categories">
+      
+        <div class="friction-category">
+          <div class="friction-title">Semantic misreads on domain-specific logic</div>
+          <div class="friction-desc">You tend to get tripped up when code has non-obvious domain semantics, applying generic interpretations instead of the intended behavior. Providing Claude with a brief spec or invariant upfront would reduce the correction loops.</div>
+          <ul class="friction-examples"><li>On the ezr.lua refactor, Claude misread pick semantics twice (applied to NUM unnecessarily, then used #keys instead of Bernoulli over counts), forcing you to correct it mid-pass</li><li>A book.html doc update was skipped during the same refactor, leaving your documentation out of sync with the code</li></ul>
+        </div>
+      
+        <div class="friction-category">
+          <div class="friction-title">Unverified correctness in multi-language ports</div>
+          <div class="friction-desc">When porting across languages, you got working-looking code but with silent bugs that weren&apos;t caught by tests. Asking Claude to cross-check outputs against a reference implementation or add differential tests would surface these earlier.</div>
+          <ul class="friction-examples"><li>The Lua port shipped with a gmatch anchor issue and ^ operator precedence bug that weren&apos;t flagged during implementation</li><li>Your final Lua benchmark results looked suspiciously good, and the session ended with an unresolved correctness concern rather than a validated port</li></ul>
+        </div>
+      
+        <div class="friction-category">
+          <div class="friction-title">Frontend asset and CSS regressions</div>
+          <div class="friction-desc">UI iteration succeeded overall but introduced avoidable rendering bugs from untested asset choices and broad CSS selectors. Verifying icon font availability and scoping style overrides narrowly would cut the rework.</div>
+          <ul class="friction-examples"><li>Academicons webfont glyphs didn&apos;t render at all, requiring a mid-session swap to Simple Icons SVGs</li><li>A strong tag CSS override clobbered your amber link colors on two hyperlinks, breaking the theme you&apos;d iterated toward</li></ul>
+        </div>
+      
+    </div>
+    
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">Primary Friction Types</div>
+        <div class="bar-row">
+        <div class="bar-label">Buggy Code</div>
+        <div class="bar-track"><div class="bar-fill" style="width:100%;background:#dc2626"></div></div>
+        <div class="bar-value">4</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Misunderstood Request</div>
+        <div class="bar-track"><div class="bar-fill" style="width:50%;background:#dc2626"></div></div>
+        <div class="bar-value">2</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">User Rejected Action</div>
+        <div class="bar-track"><div class="bar-fill" style="width:25%;background:#dc2626"></div></div>
+        <div class="bar-value">1</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Incomplete Work</div>
+        <div class="bar-track"><div class="bar-fill" style="width:25%;background:#dc2626"></div></div>
+        <div class="bar-value">1</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Wrong Approach</div>
+        <div class="bar-track"><div class="bar-fill" style="width:25%;background:#dc2626"></div></div>
+        <div class="bar-value">1</div>
+      </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Inferred Satisfaction (model-estimated)</div>
+        <div class="bar-row">
+        <div class="bar-label">Dissatisfied</div>
+        <div class="bar-track"><div class="bar-fill" style="width:12.5%;background:#eab308"></div></div>
+        <div class="bar-value">3</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Likely Satisfied</div>
+        <div class="bar-track"><div class="bar-fill" style="width:100%;background:#eab308"></div></div>
+        <div class="bar-value">24</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Satisfied</div>
+        <div class="bar-track"><div class="bar-fill" style="width:12.5%;background:#eab308"></div></div>
+        <div class="bar-value">3</div>
+      </div>
+<div class="bar-row">
+        <div class="bar-label">Happy</div>
+        <div class="bar-track"><div class="bar-fill" style="width:8.333333333333332%;background:#eab308"></div></div>
+        <div class="bar-value">2</div>
+      </div>
+      </div>
+    </div>
+
+    
+    
+    <h2 id="section-features">Existing CC Features to Try</h2>
+    <div class="claude-md-section">
+      <h3>Suggested CLAUDE.md Additions</h3>
+      <p style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Just copy this into Claude Code to add it to your CLAUDE.md.</p>
+      <div class="claude-md-actions">
+        <button class="copy-all-btn" onclick="copyAllCheckedClaudeMd()">Copy All Checked</button>
+      </div>
+      
+        <div class="claude-md-item">
+          <input type="checkbox" id="cmd-0" class="cmd-checkbox" checked data-text="Add as a new top-level section in CLAUDE.md titled &apos;## Refactoring discipline&apos;\n\n## Refactoring discipline
+- When refactoring, update ALL related files (e.g., book.html, docs, companion pages) not just the primary file
+- Verify semantic correctness of algorithms before applying style changes (e.g., pick/Bernoulli semantics, NUM vs SYM handling)
+- After refactoring, re-run tests AND spot-check output values for plausibility — suspiciously good results usually indicate a bug">
+          <label for="cmd-0">
+            <code class="cmd-code">## Refactoring discipline
+- When refactoring, update ALL related files (e.g., book.html, docs, companion pages) not just the primary file
+- Verify semantic correctness of algorithms before applying style changes (e.g., pick/Bernoulli semantics, NUM vs SYM handling)
+- After refactoring, re-run tests AND spot-check output values for plausibility — suspiciously good results usually indicate a bug</code>
+            <button class="copy-btn" onclick="copyCmdItem(0)">Copy</button>
+          </label>
+          <div class="cmd-why">In the ezr.lua session Claude missed updating book.html and misread pick semantics twice; in the multi-language port the Lua output was &apos;too good to be true&apos; suggesting an unverified correctness issue.</div>
+        </div>
+      
+        <div class="claude-md-item">
+          <input type="checkbox" id="cmd-1" class="cmd-checkbox" checked data-text="Add as a new section &apos;## Web/UI conventions&apos; near any existing styling or frontend notes\n\n## Web/UI conventions
+- Prefer Simple Icons SVGs over Academicons webfonts (glyph rendering issues)
+- When adding new CSS rules, check for specificity conflicts with existing theme colors (e.g., strong/a tag overrides breaking amber link colors)
+- Companion pages (blog, lab, book) must share the common stylesheet — update all when theme changes">
+          <label for="cmd-1">
+            <code class="cmd-code">## Web/UI conventions
+- Prefer Simple Icons SVGs over Academicons webfonts (glyph rendering issues)
+- When adding new CSS rules, check for specificity conflicts with existing theme colors (e.g., strong/a tag overrides breaking amber link colors)
+- Companion pages (blog, lab, book) must share the common stylesheet — update all when theme changes</code>
+            <button class="copy-btn" onclick="copyCmdItem(1)">Copy</button>
+          </label>
+          <div class="cmd-why">The index.html session hit both the Academicons rendering bug and a strong-tag override that broke link colors; these are now-known pitfalls for this site&apos;s design system.</div>
+        </div>
+      
+        <div class="claude-md-item">
+          <input type="checkbox" id="cmd-2" class="cmd-checkbox" checked data-text="Add as a new section &apos;## Lua port gotchas&apos; if porting work continues\n\n## Lua port gotchas
+- string.gmatch patterns: be careful with ^ anchors (they only anchor at string start, not per-iteration)
+- Operator precedence: ^ binds tighter than unary minus in Lua; parenthesize exponents
+- Validate numerical output against reference implementation (Python) before trusting benchmark results">
+          <label for="cmd-2">
+            <code class="cmd-code">## Lua port gotchas
+- string.gmatch patterns: be careful with ^ anchors (they only anchor at string start, not per-iteration)
+- Operator precedence: ^ binds tighter than unary minus in Lua; parenthesize exponents
+- Validate numerical output against reference implementation (Python) before trusting benchmark results</code>
+            <button class="copy-btn" onclick="copyCmdItem(2)">Copy</button>
+          </label>
+          <div class="cmd-why">The multi-language port session surfaced specific Lua bugs (gmatch anchor, ^ precedence) and ended with unverified suspiciously-good results — capturing these prevents repeat issues.</div>
+        </div>
+      
+    </div>
+    
+    
+    <p style="font-size: 13px; color: #64748b; margin-bottom: 12px;">Just copy this into Claude Code and it'll set it up for you.</p>
+    <div class="features-section">
+      
+        <div class="feature-card">
+          <div class="feature-title">Custom Skills</div>
+          <div class="feature-oneliner">Reusable /commands defined as markdown files for repetitive workflows</div>
+          <div class="feature-why"><strong>Why for you:</strong> You did 15 UI design iterations and 7 refactoring passes — a /ui-tweak skill (apply change, check companion pages, verify colors) and a /refactor skill (run tests, update all related docs, sanity-check output) would encode your hard-won lessons.</div>
+          
+          <div class="feature-examples">
+            <div class="feature-example">
+              <div class="example-code-row">
+                <code class="example-code">mkdir -p .claude/skills/refactor &amp;&amp; cat &gt; .claude/skills/refactor/SKILL.md &lt;&lt;&apos;EOF&apos;
+# Refactor workflow
+1. Identify ALL files referencing the symbol/pattern (grep across repo)
+2. Apply changes
+3. Run test suite
+4. Spot-check numerical output against prior known-good values
+5. Update docs (book.html, README, companion pages)
+EOF</code>
+                <button class="copy-btn" onclick="copyText(this)">Copy</button>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      
+        <div class="feature-card">
+          <div class="feature-title">Hooks</div>
+          <div class="feature-oneliner">Shell commands that auto-run on lifecycle events</div>
+          <div class="feature-why"><strong>Why for you:</strong> Your ezr.lua session enforced an 86→79 line-width change manually; a PostToolUse hook running a linter/formatter on Lua/Python/HTML would catch style drift automatically and free you from repeating &apos;line width 79&apos; instructions.</div>
+          
+          <div class="feature-examples">
+            <div class="feature-example">
+              <div class="example-code-row">
+                <code class="example-code">// .claude/settings.json
+{
+  &quot;hooks&quot;: {
+    &quot;PostToolUse&quot;: [{
+      &quot;matcher&quot;: &quot;Edit|Write&quot;,
+      &quot;hooks&quot;: [{&quot;type&quot;: &quot;command&quot;, &quot;command&quot;: &quot;if [[ $CLAUDE_FILE_PATH == *.lua ]]; then stylua --column-width 79 $CLAUDE_FILE_PATH; fi&quot;}]
+    }]
+  }
+}</code>
+                <button class="copy-btn" onclick="copyText(this)">Copy</button>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      
+        <div class="feature-card">
+          <div class="feature-title">Task Agents</div>
+          <div class="feature-oneliner">Claude spawns focused sub-agents for parallel/complex exploration</div>
+          <div class="feature-why"><strong>Why for you:</strong> Your multi-language port across Lisp/Julia/Python/Lua would benefit from parallel agents — one per language implementing and benchmarking independently, then a validator agent cross-checking that all ports produce identical output on the same input.</div>
+          
+          <div class="feature-examples">
+            <div class="feature-example">
+              <div class="example-code-row">
+                <code class="example-code">Ask: &quot;Use 4 parallel agents to port ezr to Lisp, Julia, Python, and Lua. Then use a 5th agent to verify all four produce byte-identical output on the test dataset.&quot;</code>
+                <button class="copy-btn" onclick="copyText(this)">Copy</button>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      
+    </div>
+    
+    
+    <h2 id="section-patterns">New Ways to Use Claude Code</h2>
+    <p style="font-size: 13px; color: #64748b; margin-bottom: 12px;">Just copy this into Claude Code and it'll walk you through it.</p>
+    <div class="patterns-section">
+      
+        <div class="pattern-card">
+          <div class="pattern-title">Validate numerical outputs, not just tests passing</div>
+          <div class="pattern-summary">When porting or refactoring algorithms, require output parity with a reference implementation — don&apos;t trust &apos;tests pass&apos; alone.</div>
+          <div class="pattern-detail">Your Lua port session ended with &apos;results were too good to be true&apos; — a classic sign of a silent bug (likely the gmatch or ^ precedence issue). Tests passed but semantics were off. Adding a cross-implementation diff step catches this class of bug early, especially across 4 language ports.</div>
+          
+          <div class="copyable-prompt-section">
+            <div class="prompt-label">Paste into Claude Code:</div>
+            <div class="copyable-prompt-row">
+              <code class="copyable-prompt">Before declaring the Lua port done, run the Python reference and Lua port on the same input CSV and diff their outputs line-by-line. Investigate ANY discrepancy, including floating-point differences beyond 1e-9.</code>
+              <button class="copy-btn" onclick="copyText(this)">Copy</button>
+            </div>
+          </div>
+          
+        </div>
+      
+        <div class="pattern-card">
+          <div class="pattern-title">Batch UI iteration with explicit acceptance criteria</div>
+          <div class="pattern-summary">Front-load design constraints (color tokens, icon library, shared stylesheet) so each iteration doesn&apos;t re-discover them.</div>
+          <div class="pattern-detail">You did 15 ui_design_iteration goals across index/blog/lab pages with friction from Academicons and CSS specificity. Defining a small design-tokens file and an &apos;acceptance checklist&apos; (colors match, icons render, companion pages updated) lets Claude self-verify instead of you catching regressions visually.</div>
+          
+          <div class="copyable-prompt-section">
+            <div class="prompt-label">Paste into Claude Code:</div>
+            <div class="copyable-prompt-row">
+              <code class="copyable-prompt">Create .claude/design-tokens.md listing: amber link color, dark bg, font stack, icon library (Simple Icons SVG only — NOT Academicons), and the 3 companion pages that must stay in sync. After every UI change, verify against this file.</code>
+              <button class="copy-btn" onclick="copyText(this)">Copy</button>
+            </div>
+          </div>
+          
+        </div>
+      
+        <div class="pattern-card">
+          <div class="pattern-title">Capture &apos;lessons learned&apos; mid-session</div>
+          <div class="pattern-summary">When Claude is corrected (pick semantics, missed file), ask it to write the lesson to CLAUDE.md immediately.</div>
+          <div class="pattern-detail">In the ezr.lua session you corrected Claude twice on pick semantics and once on a missed book.html update. Those corrections vanished at session end. A &apos;write this down&apos; reflex converts one-time corrections into permanent guardrails — especially valuable given you had 0 captured user instructions in CLAUDE.md so far.</div>
+          
+          <div class="copyable-prompt-section">
+            <div class="prompt-label">Paste into Claude Code:</div>
+            <div class="copyable-prompt-row">
+              <code class="copyable-prompt">I just corrected you on X. Before continuing, append a concise rule to CLAUDE.md under an appropriate section so this correction sticks for future sessions.</code>
+              <button class="copy-btn" onclick="copyText(this)">Copy</button>
+            </div>
+          </div>
+          
+        </div>
+      
+    </div>
+    
+    
+
+    
+    <h2 id="section-horizon">On the Horizon</h2>
+    <p class="section-intro">Your work spans design iteration, multi-language ports, and deep refactors—ripe territory for autonomous agent workflows that verify correctness and parallelize exploration.</p>
+    <div class="horizon-section">
+      
+        <div class="horizon-card">
+          <div class="horizon-title">Parallel Multi-Language Port Verification</div>
+          <div class="horizon-possible">Instead of porting ezr across Lisp/Julia/Python/Lua sequentially and discovering suspicious Lua results at the end, spawn parallel subagents per language that each implement, test, and cross-validate outputs against a shared reference dataset. A coordinator agent compares numerical outputs across ports, flags statistical anomalies automatically, and iterates until all implementations agree within tolerance—eliminating the &apos;too good to be true&apos; surprise.</div>
+          <div class="horizon-tip"><strong>Getting started:</strong> Use the Task tool to launch parallel subagents per language, with a verification agent that diffs outputs. Pair with hooks that auto-run test suites on every edit.</div>
+          <div class="pattern-prompt"><div class="prompt-label">Paste into Claude Code:</div><code>Port ezr to Python, Julia, Lisp, and Lua in parallel. Spawn one subagent per language using the Task tool. Each subagent must: (1) implement the port, (2) run it on a shared benchmark dataset, (3) emit results as JSON to a shared directory. Then spawn a verification subagent that loads all JSON outputs, computes pairwise numerical diffs, flags any implementation whose results deviate by more than 1% from the median, and iterates with the offending subagent until convergence. Generate a final correctness report with statistical evidence that all ports agree. Do not mark the task complete until the verification agent signs off.</code><button class="copy-btn" onclick="copyText(this)">Copy</button></div>
+        </div>
+      
+        <div class="horizon-card">
+          <div class="horizon-title">Autonomous Visual Regression Loop</div>
+          <div class="horizon-possible">Your 15 UI design iterations involved manual feedback on amber themes, broken link colors, and missing icon glyphs. An autonomous loop could screenshot each design change, compare against a target aesthetic using a vision-capable agent, detect rendering regressions (missing glyphs, CSS overrides breaking colors), and self-correct—turning 30 manual tweaks into one high-level directive.</div>
+          <div class="horizon-tip"><strong>Getting started:</strong> Combine Playwright MCP for screenshots with Claude&apos;s vision to create a design-critique loop. Add a pre-commit hook that blocks visual regressions.</div>
+          <div class="pattern-prompt"><div class="prompt-label">Paste into Claude Code:</div><code>Set up an autonomous design iteration loop for my site. (1) Install Playwright MCP to capture screenshots of index.html, blog.html, and lab.html at desktop and mobile widths. (2) Define target aesthetic: dark background, amber accents, academic serif typography. (3) After each CSS edit, auto-screenshot all pages, use vision to verify: amber link colors render, all icons display (no missing glyphs), typography is consistent, no CSS rule bleed between elements. (4) If regressions detected, auto-fix and re-verify. (5) Loop until all pages pass design criteria. Produce a gallery of before/after screenshots and a changelog of fixes.</code><button class="copy-btn" onclick="copyText(this)">Copy</button></div>
+        </div>
+      
+        <div class="horizon-card">
+          <div class="horizon-title">Test-Driven Refactor Guardian Agent</div>
+          <div class="horizon-possible">The ezr.lua refactor required human correction twice on pick semantics and missed a book.html doc update. A guardian agent could maintain a living spec of invariants (pick applies only to SYM, docs must stay synced with code), run it as a continuous check during refactors, and block any commit that violates semantics or leaves documentation stale—catching errors before the user has to.</div>
+          <div class="horizon-tip"><strong>Getting started:</strong> Define invariants in CLAUDE.md and use PostToolUse hooks to run a semantic-check subagent after every Edit. Add a docs-sync agent that cross-references code and markdown.</div>
+          <div class="pattern-prompt"><div class="prompt-label">Paste into Claude Code:</div><code>Build a refactor guardian system for the ezr codebase. (1) Analyze the repo and extract a spec of semantic invariants (e.g., &apos;pick uses Bernoulli over counts for SYM, not #keys&apos;; &apos;any change to public functions must update book.html&apos;). Save to INVARIANTS.md. (2) Configure a PostToolUse hook that, after every Edit to .lua files, spawns a subagent to verify all invariants still hold and all referenced docs are synced. (3) If any invariant breaks, auto-revert or auto-fix and log the incident. (4) Run the full test suite and line-width check (max 79) as part of the hook. Demonstrate by refactoring one module end-to-end with zero human corrections needed.</code><button class="copy-btn" onclick="copyText(this)">Copy</button></div>
+        </div>
+      
+    </div>
+    
+
+    
+    <div class="fun-ending">
+      <div class="fun-headline">"The Lua port that worked *too* well"</div>
+      <div class="fun-detail">During a multi-language port of ezr across Lisp/Julia/Python/Lua, the session ended on a note of detective-story suspicion: the Lua results came out suspiciously good, leaving the user convinced something was secretly broken rather than celebrating the win.</div>
+    </div>
+    
+
+    
+  </div>
+  <script>
+    function toggleCollapsible(header) {
+      header.classList.toggle('open');
+      const content = header.nextElementSibling;
+      content.classList.toggle('open');
+    }
+    function copyText(btn) {
+      const code = btn.previousElementSibling;
+      navigator.clipboard.writeText(code.textContent).then(() => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+      });
+    }
+    function copyCmdItem(idx) {
+      const checkbox = document.getElementById('cmd-' + idx);
+      if (checkbox) {
+        const text = checkbox.dataset.text;
+        navigator.clipboard.writeText(text).then(() => {
+          const btn = checkbox.nextElementSibling.querySelector('.copy-btn');
+          if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy'; }, 2000); }
+        });
+      }
+    }
+    function copyAllCheckedClaudeMd() {
+      const checkboxes = document.querySelectorAll('.cmd-checkbox:checked');
+      const texts = [];
+      checkboxes.forEach(cb => {
+        if (cb.dataset.text) { texts.push(cb.dataset.text); }
+      });
+      const combined = texts.join('\n');
+      const btn = document.querySelector('.copy-all-btn');
+      if (btn) {
+        navigator.clipboard.writeText(combined).then(() => {
+          btn.textContent = 'Copied ' + texts.length + ' items!';
+          btn.classList.add('copied');
+          setTimeout(() => { btn.textContent = 'Copy All Checked'; btn.classList.remove('copied'); }, 2000);
+        });
+      }
+    }
+    // Timezone selector for time of day chart (data is from our own analytics, not user input)
+    const rawHourCounts = {"0":6,"2":5,"3":22,"4":6,"5":18,"6":29,"7":13,"8":5,"9":19,"10":14,"11":9,"12":41,"13":17,"14":18,"15":38,"16":19,"17":13,"19":10,"20":25,"21":8,"22":18,"23":16};
+    function updateHourHistogram(offsetFromPT) {
+      const periods = [
+        { label: "Morning (6-12)", range: [6,7,8,9,10,11] },
+        { label: "Afternoon (12-18)", range: [12,13,14,15,16,17] },
+        { label: "Evening (18-24)", range: [18,19,20,21,22,23] },
+        { label: "Night (0-6)", range: [0,1,2,3,4,5] }
+      ];
+      const adjustedCounts = {};
+      for (const [hour, count] of Object.entries(rawHourCounts)) {
+        const newHour = (parseInt(hour) + offsetFromPT + 24) % 24;
+        adjustedCounts[newHour] = (adjustedCounts[newHour] || 0) + count;
+      }
+      const periodCounts = periods.map(p => ({
+        label: p.label,
+        count: p.range.reduce((sum, h) => sum + (adjustedCounts[h] || 0), 0)
+      }));
+      const maxCount = Math.max(...periodCounts.map(p => p.count)) || 1;
+      const container = document.getElementById('hour-histogram');
+      container.textContent = '';
+      periodCounts.forEach(p => {
+        const row = document.createElement('div');
+        row.className = 'bar-row';
+        const label = document.createElement('div');
+        label.className = 'bar-label';
+        label.textContent = p.label;
+        const track = document.createElement('div');
+        track.className = 'bar-track';
+        const fill = document.createElement('div');
+        fill.className = 'bar-fill';
+        fill.style.width = (p.count / maxCount) * 100 + '%';
+        fill.style.background = '#8b5cf6';
+        track.appendChild(fill);
+        const value = document.createElement('div');
+        value.className = 'bar-value';
+        value.textContent = p.count;
+        row.appendChild(label);
+        row.appendChild(track);
+        row.appendChild(value);
+        container.appendChild(row);
+      });
+    }
+    document.getElementById('timezone-select').addEventListener('change', function() {
+      const customInput = document.getElementById('custom-offset');
+      if (this.value === 'custom') {
+        customInput.style.display = 'inline-block';
+        customInput.focus();
+      } else {
+        customInput.style.display = 'none';
+        updateHourHistogram(parseInt(this.value));
+      }
+    });
+    document.getElementById('custom-offset').addEventListener('change', function() {
+      const parsed = parseInt(this.value, 10);
+      if (isNaN(parsed)) return;
+      updateHourHistogram(parsed + 8);
+    });
+  </script>
+</body>
+</html>
