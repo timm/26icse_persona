@@ -12,11 +12,16 @@ help: ## show help.
 push: ## commit and push with prompted message
 	@read -p "Reason? " msg; git commit -am "$$msg"; git push; git status
 
-TEX := $(wildcard paper/*.tex)
-MAIN ?= paper/paper.tex
+MAIN   ?= paper.tex
+BUILD  ?= $(HOME)/tmp/$(notdir $(I))
+PDF    := $(BUILD)/$(MAIN:.tex=.pdf)
 
-pdf: ## build the paper PDF with latexmk (expects paper/paper.tex)
-	@cd paper && latexmk -pdf -interaction=nonstopmode $(notdir $(MAIN))
+pdf: ## build paper/$(MAIN) with tectonic; outputs to ~/tmp/<repo>/
+	@mkdir -p $(BUILD)
+	@tectonic --keep-logs --keep-intermediates --outdir $(BUILD) paper/$(MAIN)
+	@echo "→ $(PDF)"
+	@open $(PDF) 2>/dev/null || true
 
-clean: ## remove LaTeX build artifacts
-	@cd paper && latexmk -C 2>/dev/null || true
+clean: ## remove build directory
+	@rm -rf $(BUILD)
+	@echo "cleaned $(BUILD)"
