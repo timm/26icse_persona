@@ -72,6 +72,17 @@ Sawtooth paper lists positive defect features as "flex, data, ruse, stor, time, 
 
 Resolve before citing.
 
+## Stakeholder-mapping details (deferred)
+
+Approach agreed: each stakeholder group carries a **4D identity vector** (Now, Build, Change, Control — `refs/cocomo__roshomon (1).pdf` Fig 1) and a **sparse 24D wince list** (pain points in COCOMO driver space, with `?` on irrelevant dims). Actions score well on objectives and get penalized by distance to any triggered pain point. Details to lock:
+
+- **Distance metric** — weighted Euclidean in 24D. Weight 0 for `?` dims, 1 otherwise (or graded). Confirm.
+- **Pain threshold τ_g** — provisional: relative, "within 15% of driver-space diameter." Needs calibration.
+- **Multiple pain points per group** — take min distance (nearest-wince wakes the group).
+- **Update rule** — soft penalty `−w·(1 − dist/τ_g)` added to score when triggered; iterate until stable. (Not hard constraints — MC runs are probabilistic.)
+- **Pain-point origin** — provisional: mechanically derive from roshomon Table 3 (each action's driver settings → pain vector for the action's "most hates" groups). LLM-generated pain points as a later ablation (follow SE4AI LLM-as-Judge protocol for validation).
+- **Two-layer integration** — 4D locates *which groups are loud* in a given org mix; 24D locates *which recommendations make them scream*. Both layers live in the same code path.
+
 ## Non-COCOMO TODOs (carried from earlier conversation)
 
 - Pick the concrete SE task for Tests 3 and 4 in `docs/validation-plan.md` (MOOT, microservices, defect ranking, or COCOMO-direct). MOOT is lowest friction.

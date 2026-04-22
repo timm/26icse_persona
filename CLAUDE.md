@@ -1,6 +1,6 @@
 # ICSE 2027 Research Track Submission
 
-Working on a paper for the ICSE 2027 Research Track. CFP source: `docs/cfp.txt`. Structural recipe and writing conventions: `docs/paper-style.md`. Theoretical frame / background synthesis: `docs/background.md`. Validation plan for the composite persona claim: `docs/validation-plan.md`. Reference PDFs in `refs/`. Submission draft in `paper/`.
+Working on a paper for the ICSE 2027 Research Track. CFP source: `docs/cfp.txt`. Three-paper arc and P1 schedule: `docs/research-plan.md`. Structural recipe and writing conventions: `docs/paper-style.md`. Theoretical frame / background synthesis: `docs/background.md`. Validation plan for the composite persona claim: `docs/validation-plan.md`. SE4AI methodology reuse map: `docs/methodology-reuse.md`. Open issues list: `todo.md`. Reference PDFs in `refs/`. Submission draft in `paper/`.
 
 ## Hard formatting rules
 
